@@ -1,0 +1,65 @@
+version: "3.8"
+
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/rules.yml:/etc/prometheus/rules.yml:ro
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --web.enable-lifecycle
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana-data:/var/lib/grafana
+    restart: unless-stopped
+
+  custom_exporter:
+    build: ./custom_exporter
+    container_name: custom_exporter
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: mydb
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  postgres_exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter:latest
+    container_name: postgres_exporter
+    environment:
+      DATA_SOURCE_NAME: postgresql://postgres:postgres@postgres:5432/mydb?sslmode=disable
+    ports:
+      - "9187:9187"
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  node_exporter:
+    image: prom/node-exporter:latest
+    container_name: node_exporter
+    ports:
+      - "9100:9100"
+    restart: unless-stopped
+
+volumes:
+  db_data:

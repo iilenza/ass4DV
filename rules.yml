@@ -1,0 +1,49 @@
+﻿groups:
+  - name: custom_alerts
+    rules:
+      - alert: ExporterDown
+        expr: up{job="custom_exporter"} == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Custom exporter is down"
+          description: "Target {{ $labels.instance }} for job {{ $labels.job }} is down."
+
+      - alert: HighStudentMetric
+        expr: custom_student_metric > 90
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High custom_student_metric"
+          description: "custom_student_metric is {{ $value }} (> 90) for {{ $labels.instance }}"
+
+      - alert: HighCPUUsage
+        expr: (100 - (avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[1m])) * 100)) > 80
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage > 80% on {{ $labels.instance }}"
+
+  - name: db_alerts
+    rules:
+      - alert: PostgresDown
+        expr: pg_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL exporter is down"
+          description: "pg_up=0 for instance {{ $labels.instance }}"
+
+      - alert: HighDBConnections
+        expr: sum(pg_stat_database_numbackends) by (instance) > 100
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High number of DB connections"
+          description: "Connections > 100 for {{ $labels.instance }}"

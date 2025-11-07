@@ -1,0 +1,33 @@
+# Дополнительные кастом-метрики для postgres_exporter
+pg_users:
+  query: |
+    SELECT
+      count(*) as users_total,
+      sum(CASE WHEN rolsuper THEN 1 ELSE 0 END) as users_super,
+      sum(CASE WHEN rolreplication THEN 1 ELSE 0 END) as users_replication
+    FROM pg_roles;
+  metrics:
+    - users_total:
+        usage: "GAUGE"
+        description: "Total number of roles (users)"
+    - users_super:
+        usage: "GAUGE"
+        description: "Number of superuser roles"
+    - users_replication:
+        usage: "GAUGE"
+        description: "Number of replication roles"
+
+pg_tables_rows:
+  query: |
+    SELECT
+      current_database() as db,
+      sum(n_live_tup) as rows_live_total,
+      sum(n_dead_tup) as rows_dead_total
+    FROM pg_stat_user_tables;
+  metrics:
+    - rows_live_total:
+        usage: "GAUGE"
+        description: "Sum of live tuples in user tables"
+    - rows_dead_total:
+        usage: "GAUGE"
+        description: "Sum of dead tuples in user tables"
